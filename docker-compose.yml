@@ -4,8 +4,8 @@ services:
   # Web (Next.js)
   web:
     build:
-      context: .
-      dockerfile: ./web/Dockerfile
+      context: ../web
+      dockerfile: ../docker_adopt/web/Dockerfile
     ports:
       - "3000:3000"
     volumes:
@@ -19,10 +19,10 @@ services:
   # CMS (Vue.js)
   cms:
     build:
-      context: .
-      dockerfile: ./cms/Dockerfile
+      context: ../cms
+      dockerfile: ../docker_adopt/cms/Dockerfile
     ports:
-      - "8080:8080"
+      - "80:8080"
     volumes:
       - ../cms:/app
     depends_on:
@@ -34,8 +34,8 @@ services:
   # API (Laravel)
   api:
     build:
-      context: .
-      dockerfile: ./api/Dockerfile
+      context: ../api
+      dockerfile: ../docker_adopt/api/Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -74,6 +74,23 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  # nginx
+  nginx-cms:
+    image: nginx:latest
+    container_name: adopt_nginx
+    ports:
+      - "80:80"
+      - "81:80"
+    volumes:
+      - ./nginx/web.conf:/etc/nginx/conf.d/web.conf
+      - ./nginx/cms.conf:/etc/nginx/conf.d/cms.conf
+      - ../web:/var/www/web
+      - ../cms:/var/www/cms
+    depends_on:
+      - web
+      - cms
+
 
 volumes:
   mongodb_data:

@@ -1,14 +1,22 @@
-FROM php:8.2-cli
+FROM php:8.2-fpm
 
-COPY . /usr/src/adopt
-WORKDIR /usr/src/adpot
-# Cài đặt các tiện ích cần thiết
+WORKDIR /var/www/html
+
+# Cài đặt các extension và công cụ cần thiết
 RUN apt-get update && apt-get install -y \
-    libzip-dev zip unzip git \
-    && docker-php-ext-install pdo pdo_mysql
+    libzip-dev zip unzip git curl \
+    && docker-php-ext-install pdo pdo_mysql zip
 
 # Cài Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-EXPOSE 8000
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Sao chép mã nguồn Laravel vào container
+COPY . /var/www/html
+
+# Chỉnh quyền cho storage và bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expose cổng PHP-FPM
+EXPOSE 9000
+
+CMD ["php-fpm"]
