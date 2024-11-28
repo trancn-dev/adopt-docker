@@ -1,22 +1,17 @@
 FROM php:8.2-fpm
 
-WORKDIR /var/www/html
+WORKDIR /var/www/api
 
-# Cài đặt các extension và công cụ cần thiết
-RUN apt-get update && apt-get install -y \
-    libzip-dev zip unzip git curl \
-    && docker-php-ext-install pdo pdo_mysql zip
+RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev zip git && \
+    docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install gd pdo pdo_mysql
 
-# Cài Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY adopt-api/ .
 
-# Sao chép mã nguồn Laravel vào container
-COPY . /var/www/html
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Chỉnh quyền cho storage và bootstrap/cache
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Expose cổng PHP-FPM
-EXPOSE 9000
+EXPOSE 8000
 
 CMD ["php-fpm"]

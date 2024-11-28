@@ -1,11 +1,12 @@
-FROM node:18-alpine
+FROM node:18
 
-WORKDIR /app
+WORKDIR /var/www/cms
 
-COPY package*.json ./
-RUN npm install --production=false
+COPY ./adopt-cms/package.json ./
+RUN npm install
 
-COPY ./ ./
+COPY ./adopt-cms/ ./
 
 EXPOSE 8080
+
 CMD ["npm", "run", "dev"]

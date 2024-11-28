@@ -1,97 +1,78 @@
-version: '3.9'
-
 services:
-  # Web (Next.js)
+  # Web (Nuxt.js 3)
   web:
     build:
-      context: ../web
-      dockerfile: ../docker_adopt/web/Dockerfile
+      context: ../
+      dockerfile: ./adopt-docker/web/Dockerfile
+    container_name: adopt-web
     ports:
       - "3000:3000"
-    volumes:
-      - ../web:/web
     depends_on:
       - api
-    environment:
-      - API_URL=http://localhost:8000
-      - NODE_ENV=development
+      - mongo
+      - redis
+    networks:
+      - adopt-network
+    volumes:
+      - ./adopt-web:/app
 
-  # CMS (Vue.js)
+  # CMS (Vue.js 3)
   cms:
     build:
-      context: ../cms
-      dockerfile: ../docker_adopt/cms/Dockerfile
+      context: ../
+      dockerfile: ./adopt-docker/cms/Dockerfile
+    container_name: adopt-cms
     ports:
-      - "80:8080"
-    volumes:
-      - ../cms:/app
+      - "8080:8080"
     depends_on:
       - api
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - NODE_ENV=development
+      - mongo
+      - redis
+    networks:
+      - adopt-network
+    volumes:
+      - ./adopt-cms:/app
 
-  # API (Laravel)
+  # API (Laravel 11)
   api:
     build:
-      context: ../api
-      dockerfile: ../docker_adopt/api/Dockerfile
+      context: ../
+      dockerfile: ./adopt-docker/api/Dockerfile
+    container_name: adopt-api
     ports:
       - "8000:8000"
-    volumes:
-      - ../api:/var/www/html
     depends_on:
-      - database
+      - mongo
       - redis
-    environment:
-      - APP_ENV=local
-      - APP_DEBUG=true
-      - DB_CONNECTION=mongodb
-      - DB_HOST=database
-      - DB_PORT=27017
-      - DB_DATABASE=adopt
-      - DB_USERNAME=root
-      - DB_PASSWORD=root
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    networks:
+      - adopt-network
+    volumes:
+      - ./adopt-api:/var/www
 
-  # Database (MongoDB)
-  database:
+  # MongoDB
+  mongo:
     image: mongo:latest
+    container_name: adopt-mongo
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=root
-      - MONGO_INITDB_DATABASE=adopt
+      - mongo-data:/data/db
+    networks:
+      - adopt-network
 
   # Redis
   redis:
     image: redis:latest
+    container_name: adopt-redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
+    networks:
+      - adopt-network
 
-  # nginx
-  nginx-cms:
-    image: nginx:latest
-    container_name: adopt_nginx
-    ports:
-      - "80:80"
-      - "81:80"
-    volumes:
-      - ./nginx/web.conf:/etc/nginx/conf.d/web.conf
-      - ./nginx/cms.conf:/etc/nginx/conf.d/cms.conf
-      - ../web:/var/www/web
-      - ../cms:/var/www/cms
-    depends_on:
-      - web
-      - cms
-
+networks:
+  adopt-network:
+    driver: bridge
 
 volumes:
-  mongodb_data:
-  redis_data:
+  mongo-data:
+    driver: local
